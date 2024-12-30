@@ -12,12 +12,15 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json()); // For parsing JSON data
-app.use(express.static(path.join(__dirname, "../public"))); // Serve static files
 
-// Route to serve the main HTML file
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../public/index.html"));
-});
+// Serve static files in development only
+if (process.env.NODE_ENV !== "production") {
+  const publicDir = path.join(__dirname, "../public");
+  app.use(express.static(publicDir));
+  app.get("/", (req, res) => {
+    res.sendFile(path.join(publicDir, "index.html"));
+  });
+}
 
 // Route to handle form submissions
 app.post("/send-email", async (req, res) => {
@@ -79,6 +82,11 @@ app.post("/send-email", async (req, res) => {
     console.error("Error sending email:", error.message);
     res.status(500).json({ error: "Failed to send email. Please try again later." });
   }
+});
+
+// Fallback route for production
+app.get("*", (req, res) => {
+  res.status(404).json({ error: "Not Found" });
 });
 
 // Start the server
